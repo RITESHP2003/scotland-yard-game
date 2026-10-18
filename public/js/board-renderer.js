@@ -55,21 +55,21 @@
     style.id = 'board-renderer-styles';
     style.textContent = `
       @keyframes board-pulse {
-        0%, 100% { opacity: 0.5; r: 17; }
-        50%      { opacity: 1;   r: 23; }
+        0%, 100% { opacity: 0.7; r: 18; }
+        50%      { opacity: 1;   r: 24; }
       }
       .board-highlight {
-        animation: board-pulse 0.9s ease-in-out infinite;
-        fill: #FBBF24;
+        animation: board-pulse 0.8s ease-in-out infinite;
+        fill: rgba(255, 200, 0, 0.5);
+        stroke: #F59E0B;
+        stroke-width: 2.5;
         pointer-events: none;
-        filter: drop-shadow(0 0 4px #F59E0B);
       }
       .board-node-interactive {
         cursor: pointer;
       }
-      .board-node-interactive:hover circle.node-bg {
-        fill: #FEF3C7;
-        filter: drop-shadow(0 0 3px #FCD34D);
+      .board-node-interactive:hover circle {
+        filter: brightness(1.25);
       }
     `;
     document.head.appendChild(style);
@@ -125,51 +125,15 @@
       while (this._g.firstChild) this._g.removeChild(this._g.firstChild);
       this._nodeGroups = {};
 
-      // 1. Thames river
-      const thamesLayer = svgEl('g', { class: 'layer-thames' });
-      thamesLayer.appendChild(svgEl('path', {
-        d: buildThamesPath(),
-        fill: 'none',
-        stroke: '#6BB8D4',
-        'stroke-width': '36',
-        'stroke-opacity': '0.35',
-        'stroke-linecap': 'round',
-        'stroke-linejoin': 'round',
-      }));
-      thamesLayer.appendChild(svgEl('path', {
-        d: buildThamesPath(),
-        fill: 'none',
-        stroke: '#A8D8EA',
-        'stroke-width': '20',
-        'stroke-opacity': '0.25',
-        'stroke-linecap': 'round',
-        'stroke-linejoin': 'round',
-      }));
-      this._g.appendChild(thamesLayer);
-
-      // 2. Taxi edges (thin, subtle)
-      const taxiLayer = svgEl('g', { class: 'layer-taxi' });
-      this._drawEdges(taxiLayer, EDGES.taxi, '#C8960C', 1.2, 0.25);
-      this._g.appendChild(taxiLayer);
-
-      // 3. Bus edges
-      const busLayer = svgEl('g', { class: 'layer-bus' });
-      this._drawEdges(busLayer, EDGES.bus, '#15803D', 2.8, 0.7);
-      this._g.appendChild(busLayer);
-
-      // 4. Underground edges
-      const ugLayer = svgEl('g', { class: 'layer-underground' });
-      this._drawEdges(ugLayer, EDGES.underground, '#DC2626', 3.5, 0.95, '9 5');
-      this._g.appendChild(ugLayer);
-
-      // 5. Boat edges
-      const boatLayer = svgEl('g', { class: 'layer-boat' });
-      this._drawEdges(boatLayer, EDGES.boat, '#1E40AF', 2.5, 0.9);
-      this._g.appendChild(boatLayer);
-
-      // 6. Highlight layer (below nodes, above edges)
-      this._highlightGroup = svgEl('g', { class: 'layer-highlights' });
-      this._g.appendChild(this._highlightGroup);
+      // 0. Real board photo as background
+      const bgImg = svgEl('image', {
+        href: './board.jpg',
+        x: 0, y: 0,
+        width: VIEWBOX_W,
+        height: VIEWBOX_H,
+        preserveAspectRatio: 'xMidYMid slice',
+      });
+      this._g.appendChild(bgImg);
 
       // 7. Nodes
       const nodeLayer = svgEl('g', { class: 'layer-nodes' });
@@ -181,11 +145,6 @@
       this._g.appendChild(this._pawnGroup);
 
       this._layers = {
-        thames: thamesLayer,
-        taxi: taxiLayer,
-        bus: busLayer,
-        underground: ugLayer,
-        boat: boatLayer,
         highlights: this._highlightGroup,
         nodes: nodeLayer,
         pawns: this._pawnGroup,
@@ -221,56 +180,73 @@
         const types = n.types || [];
         const isUnderground = types.includes('underground');
         const isBus = types.includes('bus') && !isUnderground;
+        const isTaxiOnly = !isUnderground && !isBus;
 
-        // Shadow for depth
-        g.appendChild(svgEl('circle', {
-          cx: n.x + 0.5, cy: n.y + 1, r: isUnderground ? 13 : 10,
-          fill: 'rgba(0,0,0,0.18)',
-        }));
-
-        // Outer ring for underground (red) or bus (green)
         if (isUnderground) {
+          // Underground: red circle like real board
           g.appendChild(svgEl('circle', {
-            cx: n.x, cy: n.y, r: 13,
-            fill: '#DC2626',
-            stroke: '#9B1C1C',
-            'stroke-width': '1',
+            cx: n.x, cy: n.y, r: 14,
+            fill: '#CC1111',
+            stroke: '#8B0000',
+            'stroke-width': '1.5',
           }));
-        } else if (isBus) {
           g.appendChild(svgEl('circle', {
             cx: n.x, cy: n.y, r: 11,
-            fill: '#15803D',
-            stroke: '#166534',
+            fill: '#DD2222',
+            stroke: 'none',
+          }));
+        } else if (isBus) {
+          // Bus: yellow-green octagon / rounded square like real board
+          g.appendChild(svgEl('circle', {
+            cx: n.x, cy: n.y, r: 12,
+            fill: '#E8A000',
+            stroke: '#8B5E00',
+            'stroke-width': '1.5',
+          }));
+          g.appendChild(svgEl('circle', {
+            cx: n.x, cy: n.y, r: 9.5,
+            fill: '#F0B800',
+            stroke: 'none',
+          }));
+        } else {
+          // Taxi-only: small yellow circle (real board uses small yellow octagons)
+          g.appendChild(svgEl('circle', {
+            cx: n.x, cy: n.y, r: 10,
+            fill: '#F5D020',
+            stroke: '#B8860B',
             'stroke-width': '1',
+          }));
+          g.appendChild(svgEl('circle', {
+            cx: n.x, cy: n.y, r: 8,
+            fill: '#FFE040',
+            stroke: 'none',
           }));
         }
 
-        // White inner circle
-        const innerR = isUnderground ? 10 : isBus ? 8.5 : 9;
-        g.appendChild(svgEl('circle', {
-          cx: n.x, cy: n.y, r: innerR,
-          fill: '#FAFAF8',
-          stroke: isUnderground ? '#9B1C1C' : isBus ? '#166534' : '#9CA3AF',
-          'stroke-width': isUnderground || isBus ? '0' : '0.8',
-          class: 'node-bg',
-        }));
-
-        // Node number label
-        const fontSize = isUnderground ? 7.5 : isBus ? 7 : 6.5;
+        // Number label — black text like real board
+        const fontSize = isUnderground ? 8 : isBus ? 7.5 : 7;
+        const fontColor = isUnderground ? '#fff' : '#1a0a00';
         const label = svgEl('text', {
           x: n.x,
-          y: n.y + 2.5,
+          y: n.y + 3,
           'text-anchor': 'middle',
           'font-size': fontSize,
-          'font-family': 'Arial, sans-serif',
-          'font-weight': 'bold',
-          fill: isUnderground ? '#7F1D1D' : isBus ? '#14532D' : '#374151',
+          'font-family': 'Arial Black, Arial, sans-serif',
+          'font-weight': '900',
+          fill: fontColor,
           'pointer-events': 'none',
         });
         label.textContent = id;
         g.appendChild(label);
 
-        // Click handler on the group
+        // Invisible larger hit area for easier tapping
+        g.appendChild(svgEl('circle', {
+          cx: n.x, cy: n.y, r: 16,
+          fill: 'transparent',
+          stroke: 'none',
+        }));
+
+        // Click handler
         g.addEventListener('click', (e) => {
           e.stopPropagation();
           if (this._interactiveSet && !this._interactiveSet.has(id)) return;

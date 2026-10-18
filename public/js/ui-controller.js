@@ -269,28 +269,51 @@
     var state = this.engine.getState();
     var container = this.$startPosCards;
     if (!container) { this.startTurn(); return; }
+
+    // Build the screen differently:
+    // - Detectives: show all their stations (they can tell each other)
+    // - Mr. X: hidden, revealed only when "Pass to Mr. X" is tapped
     container.innerHTML = '';
 
-    // Mr. X card
-    var mrx = state.players[0];
-    var mrxCard = el('div', { className: 'start-pos-card mrx-card' }, [
-      el('div', { className: 'start-pos-badge mrx-badge' }, '🕵️ Mr. X'),
-      el('div', { className: 'start-pos-name' }, mrx.name),
-      el('div', { className: 'start-pos-station' }, 'Station ' + mrx.position),
-      el('div', { className: 'start-pos-note' }, 'Keep your station secret!')
+    // Detective cards (all visible)
+    var detSection = el('div', { className: 'start-pos-section' }, [
+      el('p', { className: 'start-pos-section-label' }, '🔍 Detective starting stations (share with each other):')
     ]);
-    container.appendChild(mrxCard);
-
-    // Detective cards
     state.players.slice(1).forEach(function (det, i) {
       var dc = DETECTIVE_COLORS[i] || { color: '#888', name: 'Det' };
       var card = el('div', { className: 'start-pos-card det-card', style: { borderColor: dc.color } }, [
-        el('div', { className: 'start-pos-badge', style: { backgroundColor: dc.color } }, '🔍 Detective'),
+        el('div', { className: 'start-pos-badge', style: { backgroundColor: dc.color } }, '🔍 ' + (dc.name || 'Det')),
         el('div', { className: 'start-pos-name' }, det.name),
         el('div', { className: 'start-pos-station', style: { color: dc.color } }, 'Station ' + det.position)
       ]);
-      container.appendChild(card);
+      detSection.appendChild(card);
     });
+    container.appendChild(detSection);
+
+    // Mr. X card — hidden, tap to reveal
+    var mrx = state.players[0];
+    var mrxRevealed = false;
+    var mrxStation = el('div', { className: 'start-pos-station mrx-station-hidden' }, '🔒 Hidden — pass to Mr. X first');
+    var mrxCard = el('div', { className: 'start-pos-card mrx-card' }, [
+      el('div', { className: 'start-pos-badge mrx-badge' }, '🕵️ Mr. X'),
+      el('div', { className: 'start-pos-name' }, mrx.name),
+      mrxStation
+    ]);
+    mrxCard.addEventListener('click', function () {
+      if (!mrxRevealed) {
+        mrxRevealed = true;
+        mrxStation.textContent = 'Station ' + mrx.position;
+        mrxStation.className = 'start-pos-station';
+        mrxStation.style.color = '';
+        mrxCard.classList.add('mrx-revealed');
+      }
+    });
+
+    var mrxSection = el('div', { className: 'start-pos-section' }, [
+      el('p', { className: 'start-pos-section-label' }, '🕵️ Mr. X: pass device to Mr. X, then tap card to reveal station:'),
+      mrxCard
+    ]);
+    container.appendChild(mrxSection);
 
     this.showScreen('starting-positions');
   };
@@ -651,7 +674,40 @@
       }
     }
 
-    this.renderer.updatePawns(pawns);
+    this.renderer.updatePawns(
+      { position: state.players[0].position, lastKnown: this._getLastRevealPosition(state) },
+      state.players.slice(1).map(function (p, i) {
+        return { position: p.position };
+      }),
+      isMrxTurn || isRevealTurn  // showMrX
+    );
+
+    // Highlight current player's own node ("you are here")
+    var currentNode = fromNode;
+    if (currentNode && this.renderer._nodeGroups && this.renderer._nodeGroups[currentNode]) {
+      var ng = this.renderer._nodeGroups[currentNode];
+      var existingRing = ng.querySelector('.current-node-ring');
+      if (!existingRing) {
+        // Clear any previous "you are here" rings across all nodes
+        Object.values(this.renderer._nodeGroups).forEach(function (g) {
+          var r = g.querySelector('.current-node-ring');
+          if (r) r.parentNode.removeChild(r);
+        });
+        var SVG_NS = 'http://www.w3.org/2000/svg';
+        var ring = document.createElementNS(SVG_NS, 'circle');
+        var n = NODES[currentNode];
+        ring.setAttribute('cx', n.x);
+        ring.setAttribute('cy', n.y);
+        ring.setAttribute('r', isMrxTurn ? 20 : 18);
+        ring.setAttribute('fill', 'none');
+        ring.setAttribute('stroke', isMrxTurn ? '#F59E0B' : (DETECTIVE_COLORS[state.currentPlayerIndex - 1] || { color: '#3B82F6' }).color);
+        ring.setAttribute('stroke-width', '3');
+        ring.setAttribute('stroke-dasharray', '6 3');
+        ring.setAttribute('class', 'current-node-ring');
+        ring.setAttribute('pointer-events', 'none');
+        ng.insertBefore(ring, ng.firstChild);
+      }
+    }
 
     // Highlight valid moves for current player
     var currentPlayer = state.players[state.currentPlayerIndex];
@@ -783,14 +839,14 @@
     bar.innerHTML = '';
 
     var types = isMrx
-      ? [['taxi', '🚕'], ['bus', '🚌'], ['underground', '🚇'], ['black', '⬛']]
+      ? [['taxi', '🚕'], ['bus', '🚌'], ['underground', '🚇'], ['black', '⬛'], ['double', '2×']]
       : [['taxi', '🚕'], ['bus', '🚌'], ['underground', '🚇']];
 
     types.forEach(function (entry) {
       var type = entry[0];
       var icon = entry[1];
       var count = tickets[type] || 0;
-      var chip = el('span', { className: 'ticket-chip ticket-' + type }, [
+      var chip = el('span', { className: 'ticket-chip ticket-' + type + (count === 0 ? ' ticket-empty' : '') }, [
         el('span', { className: 'ticket-icon' }, icon),
         el('span', { className: 'ticket-count' }, '' + count)
       ]);

@@ -392,28 +392,58 @@ body {
 .active-pawn-info .pawn-dot { width: 14px; height: 14px; }
 
 .ticket-picker {
-  display: flex;
+  display: none;
+  flex-direction: column;
   gap: 0.5rem;
-  padding: 0.5rem 0;
+  padding: 0.75rem;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+  border-top: 2px solid #e5e7eb;
 }
-.ticket-picker .btn {
-  flex: 1;
-  min-height: 40px;
-  font-size: 0.8rem;
+.ticket-picker.visible {
+  display: flex !important;
 }
-.ticket-picker .btn.taxi-btn { background: var(--taxi); color: #fff; }
-.ticket-picker .btn.bus-btn { background: var(--bus); color: #fff; }
-.ticket-picker .btn.underground-btn { background: var(--underground); color: #fff; }
-.ticket-picker .btn.black-btn { background: #000; color: #fff; }
+.ticket-picker-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-light);
+  text-align: center;
+  padding-bottom: 0.25rem;
+}
+.ticket-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 52px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #fff;
+  transition: filter 0.15s;
+}
+.ticket-option:hover { filter: brightness(1.15); }
+.ticket-option.ticket-taxi    { background: var(--taxi); }
+.ticket-option.ticket-bus     { background: var(--bus); }
+.ticket-option.ticket-underground { background: var(--underground); }
+.ticket-option.ticket-black   { background: #111827; }
+.ticket-option.ticket-cancel  { background: #9CA3AF; }
 
 .move-confirm {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.5rem 0;
+  padding: 0.75rem;
+  background: #f0fdf4;
+  border-radius: 10px;
+  border: 2px solid #16a34a;
   animation: slideUp 0.2s ease;
 }
+.move-confirm.visible { display: flex !important; }
 .move-confirm span { font-size: 0.9rem; font-weight: 600; }
 .confirm-btns { display: flex; gap: 0.5rem; }
 

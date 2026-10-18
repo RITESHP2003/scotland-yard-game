@@ -45,7 +45,7 @@
     this.renderer = null;
 
     // Screen ids
-    this.screens = ['welcome', 'setup', 'pass-screen', 'game', 'gameover'];
+    this.screens = ['welcome', 'setup', 'starting-positions', 'pass-screen', 'game', 'gameover'];
 
     // Pending move state
     this._pendingNode = null;
@@ -80,9 +80,12 @@
     this.$btnBackSetup = $('#btn-back-setup');
 
     // Pass screen
-    this.$passTitle = $('#pass-title');
-    this.$passSubtitle = $('#pass-subtitle');
+    this.$passTitle = $('#pass-title');    this.$passSubtitle = $('#pass-subtitle');
     this.$btnReady = $('#btn-ready');
+
+    // Starting positions screen
+    this.$startPosCards = $('#start-pos-cards');
+    this.$btnBeginGame = $('#btn-begin-game');
 
     // Game screen
     this.$boardContainer = $('#board-container');
@@ -139,6 +142,11 @@
 
     // Pass screen
     this.$btnReady.addEventListener('click', function () { self._onReady(); });
+
+    // Begin game (after starting positions shown)
+    if (this.$btnBeginGame) {
+      this.$btnBeginGame.addEventListener('click', function () { self.startTurn(); });
+    }
 
     // Game – move confirmation
     this.$btnConfirmMove.addEventListener('click', function () { self._onConfirmMove(); });
@@ -254,7 +262,37 @@
     this.renderer.render();
     this.renderer.onNodeClick(this._onNodeClick.bind(this));
     this._activePawnIndex = 0;
-    this.startTurn();
+    this._showStartingPositions();
+  };
+
+  UIController.prototype._showStartingPositions = function () {
+    var state = this.engine.getState();
+    var container = this.$startPosCards;
+    if (!container) { this.startTurn(); return; }
+    container.innerHTML = '';
+
+    // Mr. X card
+    var mrx = state.players[0];
+    var mrxCard = el('div', { className: 'start-pos-card mrx-card' }, [
+      el('div', { className: 'start-pos-badge mrx-badge' }, '🕵️ Mr. X'),
+      el('div', { className: 'start-pos-name' }, mrx.name),
+      el('div', { className: 'start-pos-station' }, 'Station ' + mrx.position),
+      el('div', { className: 'start-pos-note' }, 'Keep your station secret!')
+    ]);
+    container.appendChild(mrxCard);
+
+    // Detective cards
+    state.players.slice(1).forEach(function (det, i) {
+      var dc = DETECTIVE_COLORS[i] || { color: '#888', name: 'Det' };
+      var card = el('div', { className: 'start-pos-card det-card', style: { borderColor: dc.color } }, [
+        el('div', { className: 'start-pos-badge', style: { backgroundColor: dc.color } }, '🔍 Detective'),
+        el('div', { className: 'start-pos-name' }, det.name),
+        el('div', { className: 'start-pos-station', style: { color: dc.color } }, 'Station ' + det.position)
+      ]);
+      container.appendChild(card);
+    });
+
+    this.showScreen('starting-positions');
   };
 
   // ── Turn flow ───────────────────────────────────────────────────────────
@@ -942,13 +980,12 @@
   // ── Rules modal ─────────────────────────────────────────────────────────
   UIController.prototype.showRules = function () {
     if (!this.$rulesModal) return;
-    this._populateRulesContent();
-    this.$rulesModal.classList.add('visible');
+    this.$rulesModal.classList.remove('hidden');
   };
 
   UIController.prototype._hideRules = function () {
     if (this.$rulesModal) {
-      this.$rulesModal.classList.remove('visible');
+      this.$rulesModal.classList.add('hidden');
     }
   };
 

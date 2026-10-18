@@ -232,6 +232,37 @@ body {
   margin-right: 2px;
 }
 
+/* === STARTING POSITIONS SCREEN === */
+.start-pos-content { max-width: 520px; text-align: center; }
+.start-pos-content h2 { margin-bottom: 0.5rem; }
+.start-pos-subtitle { color: var(--text-light); margin-bottom: 1.5rem; font-size: 0.95rem; }
+#start-pos-cards { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; text-align: left; }
+.start-pos-card {
+  background: var(--surface);
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.mrx-card { border-color: var(--bg-dark); }
+.start-pos-badge {
+  flex-shrink: 0;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff;
+  white-space: nowrap;
+}
+.mrx-badge { background: var(--bg-dark); }
+.start-pos-name { font-weight: 700; font-size: 1rem; flex: 1; }
+.start-pos-station { font-size: 1.1rem; font-weight: 800; white-space: nowrap; }
+.start-pos-note { font-size: 0.72rem; color: var(--text-light); white-space: nowrap; }
+
 /* === PASS SCREEN === */
 #screen-pass-screen { background: #000; z-index: 10; }
 .pass-content { text-align: center; color: #fff; padding: 2rem; }

@@ -55,19 +55,21 @@
     style.id = 'board-renderer-styles';
     style.textContent = `
       @keyframes board-pulse {
-        0%, 100% { opacity: 0.4; r: 16; }
-        50%      { opacity: 1;   r: 22; }
+        0%, 100% { opacity: 0.5; r: 17; }
+        50%      { opacity: 1;   r: 23; }
       }
       .board-highlight {
-        animation: board-pulse 1s ease-in-out infinite;
+        animation: board-pulse 0.9s ease-in-out infinite;
         fill: #FBBF24;
         pointer-events: none;
+        filter: drop-shadow(0 0 4px #F59E0B);
       }
       .board-node-interactive {
         cursor: pointer;
       }
       .board-node-interactive:hover circle.node-bg {
-        fill: #FEF08A;
+        fill: #FEF3C7;
+        filter: drop-shadow(0 0 3px #FCD34D);
       }
     `;
     document.head.appendChild(style);
@@ -128,32 +130,41 @@
       thamesLayer.appendChild(svgEl('path', {
         d: buildThamesPath(),
         fill: 'none',
-        stroke: '#87CEEB',
-        'stroke-width': '30',
-        'stroke-opacity': '0.4',
+        stroke: '#6BB8D4',
+        'stroke-width': '36',
+        'stroke-opacity': '0.35',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+      }));
+      thamesLayer.appendChild(svgEl('path', {
+        d: buildThamesPath(),
+        fill: 'none',
+        stroke: '#A8D8EA',
+        'stroke-width': '20',
+        'stroke-opacity': '0.25',
         'stroke-linecap': 'round',
         'stroke-linejoin': 'round',
       }));
       this._g.appendChild(thamesLayer);
 
-      // 2. Taxi edges
+      // 2. Taxi edges (thin, subtle)
       const taxiLayer = svgEl('g', { class: 'layer-taxi' });
-      this._drawEdges(taxiLayer, EDGES.taxi, '#D4A017', 1, 0.3);
+      this._drawEdges(taxiLayer, EDGES.taxi, '#C8960C', 1.2, 0.25);
       this._g.appendChild(taxiLayer);
 
       // 3. Bus edges
       const busLayer = svgEl('g', { class: 'layer-bus' });
-      this._drawEdges(busLayer, EDGES.bus, '#16A34A', 2.5, 0.7);
+      this._drawEdges(busLayer, EDGES.bus, '#15803D', 2.8, 0.7);
       this._g.appendChild(busLayer);
 
       // 4. Underground edges
       const ugLayer = svgEl('g', { class: 'layer-underground' });
-      this._drawEdges(ugLayer, EDGES.underground, '#DC2626', 3, 1, '8 4');
+      this._drawEdges(ugLayer, EDGES.underground, '#DC2626', 3.5, 0.95, '9 5');
       this._g.appendChild(ugLayer);
 
       // 5. Boat edges
       const boatLayer = svgEl('g', { class: 'layer-boat' });
-      this._drawEdges(boatLayer, EDGES.boat, '#1E3A5F', 2, 1);
+      this._drawEdges(boatLayer, EDGES.boat, '#1E40AF', 2.5, 0.9);
       this._g.appendChild(boatLayer);
 
       // 6. Highlight layer (below nodes, above edges)
@@ -208,38 +219,52 @@
         });
 
         const types = n.types || [];
+        const isUnderground = types.includes('underground');
+        const isBus = types.includes('bus') && !isUnderground;
 
-        // Outer ring for underground or bus-only
-        if (types.includes('underground')) {
+        // Shadow for depth
+        g.appendChild(svgEl('circle', {
+          cx: n.x + 0.5, cy: n.y + 1, r: isUnderground ? 13 : 10,
+          fill: 'rgba(0,0,0,0.18)',
+        }));
+
+        // Outer ring for underground (red) or bus (green)
+        if (isUnderground) {
           g.appendChild(svgEl('circle', {
-            cx: n.x, cy: n.y, r: 12,
-            fill: '#DC2626', stroke: 'none',
+            cx: n.x, cy: n.y, r: 13,
+            fill: '#DC2626',
+            stroke: '#9B1C1C',
+            'stroke-width': '1',
           }));
-        } else if (types.includes('bus') && !types.includes('underground')) {
+        } else if (isBus) {
           g.appendChild(svgEl('circle', {
             cx: n.x, cy: n.y, r: 11,
-            fill: '#16A34A', stroke: 'none',
+            fill: '#15803D',
+            stroke: '#166534',
+            'stroke-width': '1',
           }));
         }
 
         // White inner circle
+        const innerR = isUnderground ? 10 : isBus ? 8.5 : 9;
         g.appendChild(svgEl('circle', {
-          cx: n.x, cy: n.y, r: 9,
-          fill: '#FFFFFF',
-          stroke: '#333',
-          'stroke-width': '0.5',
+          cx: n.x, cy: n.y, r: innerR,
+          fill: '#FAFAF8',
+          stroke: isUnderground ? '#9B1C1C' : isBus ? '#166534' : '#9CA3AF',
+          'stroke-width': isUnderground || isBus ? '0' : '0.8',
           class: 'node-bg',
         }));
 
         // Node number label
+        const fontSize = isUnderground ? 7.5 : isBus ? 7 : 6.5;
         const label = svgEl('text', {
           x: n.x,
           y: n.y + 2.5,
           'text-anchor': 'middle',
-          'font-size': '7',
+          'font-size': fontSize,
           'font-family': 'Arial, sans-serif',
           'font-weight': 'bold',
-          fill: '#333',
+          fill: isUnderground ? '#7F1D1D' : isBus ? '#14532D' : '#374151',
           'pointer-events': 'none',
         });
         label.textContent = id;
@@ -306,18 +331,29 @@
           const dc = DETECTIVE_COLORS[i] || { color: '#999' };
           const g = svgEl('g', { class: 'pawn-detective' });
 
+          // Shadow
           g.appendChild(svgEl('circle', {
-            cx: n.x, cy: n.y, r: 10,
+            cx: n.x + 1, cy: n.y + 2, r: 13,
+            fill: 'rgba(0,0,0,0.3)',
+          }));
+          // Outer ring
+          g.appendChild(svgEl('circle', {
+            cx: n.x, cy: n.y, r: 13,
             fill: dc.color,
-            stroke: '#FFF',
-            'stroke-width': '2',
+            stroke: '#fff',
+            'stroke-width': '2.5',
+          }));
+          // Inner highlight
+          g.appendChild(svgEl('circle', {
+            cx: n.x - 3, cy: n.y - 3, r: 4,
+            fill: 'rgba(255,255,255,0.25)',
           }));
 
           const label = svgEl('text', {
             x: n.x,
-            y: n.y + 3.5,
+            y: n.y + 4,
             'text-anchor': 'middle',
-            'font-size': '9',
+            'font-size': '11',
             'font-weight': 'bold',
             'font-family': 'Arial, sans-serif',
             fill: '#FFF',
@@ -336,26 +372,43 @@
       if (!n) return;
       const g = svgEl('g', { class: 'pawn-mrx' });
 
-      const circleAttrs = {
-        cx: n.x, cy: n.y, r: 12,
-        fill: isGhost ? 'none' : '#111',
-        stroke: isGhost ? '#666' : '#FFF',
-        'stroke-width': isGhost ? '2' : '2',
-      };
-      if (isGhost) {
-        circleAttrs['stroke-dasharray'] = '4 3';
-        circleAttrs.fill = 'rgba(0,0,0,0.2)';
+      if (!isGhost) {
+        // Shadow
+        g.appendChild(svgEl('circle', {
+          cx: n.x + 1.5, cy: n.y + 2.5, r: 16,
+          fill: 'rgba(0,0,0,0.35)',
+        }));
+        // Main circle
+        g.appendChild(svgEl('circle', {
+          cx: n.x, cy: n.y, r: 16,
+          fill: '#111827',
+          stroke: '#FFF',
+          'stroke-width': '2.5',
+        }));
+        // Inner highlight
+        g.appendChild(svgEl('circle', {
+          cx: n.x - 4, cy: n.y - 4, r: 5,
+          fill: 'rgba(255,255,255,0.15)',
+        }));
+      } else {
+        // Ghost (last known position)
+        g.appendChild(svgEl('circle', {
+          cx: n.x, cy: n.y, r: 14,
+          fill: 'rgba(17,24,39,0.15)',
+          stroke: '#6B7280',
+          'stroke-width': '2',
+          'stroke-dasharray': '5 4',
+        }));
       }
-      g.appendChild(svgEl('circle', circleAttrs));
 
       const label = svgEl('text', {
         x: n.x,
-        y: n.y + 4,
+        y: n.y + 5,
         'text-anchor': 'middle',
-        'font-size': '11',
+        'font-size': isGhost ? '12' : '13',
         'font-weight': 'bold',
         'font-family': 'Arial, sans-serif',
-        fill: isGhost ? '#888' : '#FFF',
+        fill: isGhost ? '#9CA3AF' : '#FFF',
         'pointer-events': 'none',
       });
       label.textContent = 'X';

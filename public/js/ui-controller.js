@@ -537,8 +537,15 @@
     var state = this.engine.getState();
     var isMrx = state.currentPlayerIndex === 0;
 
-    // Check double move toggle
+    // If double move toggle is active and not already in second part, start it first
     var useDouble = isMrx && this.$btnDouble && this.$btnDouble.classList.contains('active');
+    if (useDouble && !state.isDoubleMoveSecondPart) {
+      var dmResult = this.engine.startDoubleMove();
+      if (!dmResult || !dmResult.success) {
+        alert('Cannot use double move: ' + (dmResult ? dmResult.error : 'unknown error'));
+        return;
+      }
+    }
 
     this.confirmMove(this._pendingNode, this._pendingTicket, {
       double: useDouble,
@@ -549,7 +556,7 @@
 
   UIController.prototype.confirmMove = function (nodeId, ticket, opts) {
     opts = opts || {};
-    var result = this.engine.makeMove(nodeId, ticket, opts);
+    var result = this.engine.makeMove(nodeId, ticket);
     if (!result || !result.success) {
       // Move rejected by engine
       this._clearPendingMove();
@@ -558,25 +565,34 @@
 
     this._clearPendingMove();
 
-    // Reset toggles
-    if (this.$btnDouble) this.$btnDouble.classList.remove('active');
-    if (this.$btnBlack) this.$btnBlack.classList.remove('active');
-
     // Check game state after move
     var state = this.engine.getState();
 
     if (state.gameOver) {
-      this.saveGame(); // Save final state
+      this.saveGame();
       this.showGameOver(state.winner, state.winReason);
       return;
     }
 
-    // If double move was used by Mr. X, they get another move turn
-    if (result.doubleMovePending) {
+    // If still in double move second part, stay on board for Mr. X's second move
+    if (state.isDoubleMoveSecondPart) {
       this.updateBoard();
       this._updateBottomPanel();
-      return; // Stay on game screen for second move
+      // Keep double move button active to remind player they're on second move
+      if (this.$btnDouble) {
+        this.$btnDouble.classList.add('active');
+        this.$btnDouble.textContent = '2× (2nd move)';
+        this.$btnDouble.disabled = true;
+      }
+      return;
     }
+
+    // Reset toggles
+    if (this.$btnDouble) {
+      this.$btnDouble.classList.remove('active');
+      this.$btnDouble.disabled = false;
+    }
+    if (this.$btnBlack) this.$btnBlack.classList.remove('active');
 
     // Multi-pawn detective: advance to next pawn or next player
     var currentState = this.engine.getState();

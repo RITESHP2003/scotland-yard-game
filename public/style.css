@@ -137,6 +137,19 @@ body {
 }
 .toggle-btn.active { background: var(--bg-dark); color: #fff; border-color: var(--bg-dark); }
 
+.player-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--radius-sm);
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  appearance: auto;
+}
+
 .name-input-row {
   display: flex;
   align-items: center;

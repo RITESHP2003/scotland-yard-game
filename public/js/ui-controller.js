@@ -74,7 +74,7 @@
     this.$btnRulesWelcome = $('#btn-rules-welcome');
 
     // Setup
-    this.$numPlayersSelect = $('#num-players');
+    this.$numPlayersSelect = $('#num-players-select');
     this.$playerNamesContainer = $('#player-names-container');
     this.$btnStartGame = $('#btn-start-game');
     this.$btnBackSetup = $('#btn-back-setup');
@@ -121,7 +121,10 @@
     var self = this;
 
     // Welcome
-    this.$btnNewGame.addEventListener('click', function () { self.showScreen('setup'); });
+    this.$btnNewGame.addEventListener('click', function () {
+      self.showScreen('setup');
+      self._renderPlayerNameInputs(parseInt(self.$numPlayersSelect.value, 10) || 3);
+    });
     this.$btnContinue.addEventListener('click', function () { self.loadGame(); });
     if (this.$btnRulesWelcome) {
       this.$btnRulesWelcome.addEventListener('click', function () { self.showRules(); });
@@ -182,7 +185,11 @@
   UIController.prototype.showScreen = function (id) {
     for (var key in this.$screens) {
       if (this.$screens[key]) {
-        this.$screens[key].classList.toggle('active', key === id);
+        if (key === id) {
+          this.$screens[key].classList.remove('hidden');
+        } else {
+          this.$screens[key].classList.add('hidden');
+        }
       }
     }
     // Close travel log when leaving game screen
@@ -244,6 +251,7 @@
     this.engine = new window.GameEngine();
     this.engine.setupGame(numPlayers, names);
     this.renderer = new window.BoardRenderer('board-container');
+    this.renderer.render();
     this.renderer.onNodeClick(this._onNodeClick.bind(this));
     this._activePawnIndex = 0;
     this.startTurn();
@@ -255,7 +263,7 @@
     var current = state.players[state.currentPlayerIndex];
     var isMrx = state.currentPlayerIndex === 0;
     var displayName = current.name;
-    var turnNum = state.turnNumber;
+    var turnNum = state.turn;
 
     // Check if this is a reveal turn — show reveal overlay before pass screen
     if (!isMrx && REVEAL_TURNS.indexOf(turnNum) !== -1 && state.currentPlayerIndex === 1) {
@@ -271,8 +279,8 @@
   };
 
   UIController.prototype._showPassScreen = function (name, isMrx, turnNum) {
-    this.$passTitle.textContent = 'Pass the device to';
-    this.$passSubtitle.textContent = isMrx ? name + ' (Mr. X)' : name;
+    this.$passTitle.textContent = name;
+    this.$passSubtitle.textContent = isMrx ? '🕵️ Mr. X' : '🔍 Detective';
 
     // Style pass screen differently for Mr. X vs detective
     var passScreen = this.$screens['pass-screen'];
@@ -535,7 +543,7 @@
 
     var state = this.engine.getState();
     var isMrxTurn = state.currentPlayerIndex === 0;
-    var turnNumber = state.turnNumber;
+    var turnNumber = state.turn;
     var isRevealTurn = REVEAL_TURNS.indexOf(turnNumber) !== -1;
 
     // Build pawn data for renderer
@@ -695,7 +703,7 @@
   // ── Turn info header ────────────────────────────────────────────────────
   UIController.prototype._updateTurnInfo = function (state) {
     if (this.$turnInfo) {
-      this.$turnInfo.textContent = 'Turn ' + state.turnNumber + ' / ' + MAX_TURNS;
+      this.$turnInfo.textContent = 'Turn ' + state.turn + ' / ' + MAX_TURNS;
     }
     if (this.$playerLabel) {
       var current = state.players[state.currentPlayerIndex];
@@ -920,6 +928,7 @@
       this.engine = new window.GameEngine();
       this.engine.loadState(data);
       this.renderer = new window.BoardRenderer('board-container');
+      this.renderer.render();
       this.renderer.onNodeClick(this._onNodeClick.bind(this));
       this._activePawnIndex = 0;
       this.startTurn();

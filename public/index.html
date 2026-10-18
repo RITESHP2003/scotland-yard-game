@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Scotland Yard</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='42' cy='42' r='28' fill='none' stroke='%231a1a2e' stroke-width='8'/%3E%3Cline x1='62' y1='62' x2='90' y2='90' stroke='%231a1a2e' stroke-width='10' stroke-linecap='round'/%3E%3Ctext x='42' y='50' text-anchor='middle' font-size='28' font-weight='bold' fill='%231a1a2e'%3E?%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- WELCOME SCREEN -->
+  <div id="screen-welcome" class="screen">
+    <div class="screen-content welcome-content">
+      <div class="logo">🔍</div>
+      <h1>Scotland Yard<span class="subtitle">Digital Edition</span></h1>
+      <p class="tagline">A detective game of cunning and deduction</p>
+      <div class="menu-buttons">
+        <button id="btn-new-game" class="btn btn-primary">New Game</button>
+        <button id="btn-continue" class="btn btn-secondary hidden">Resume Game</button>
+        <button id="btn-rules-welcome" class="btn btn-ghost">How to Play</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP SCREEN -->
+  <div id="screen-setup" class="screen hidden">
+    <div class="screen-content setup-content">
+      <h2>Game Setup</h2>
+      <div class="setup-section">
+        <label>Number of Players</label>
+        <div id="num-players" class="toggle-group">
+          <button class="toggle-btn active" data-count="3">3</button>
+          <button class="toggle-btn" data-count="4">4</button>
+          <button class="toggle-btn" data-count="5">5</button>
+          <button class="toggle-btn" data-count="6">6</button>
+        </div>
+      </div>
+      <div class="setup-section">
+        <label>Player Names</label>
+        <div id="player-names-container"></div>
+      </div>
+      <div id="pawn-assignment" class="setup-section"></div>
+      <button id="btn-start-game" class="btn btn-primary">Start Game</button>
+      <button id="btn-back-setup" class="btn btn-ghost">Back</button>
+    </div>
+  </div>
+
+  <!-- PASS DEVICE SCREEN -->
+  <div id="screen-pass-screen" class="screen hidden">
+    <div class="pass-content">
+      <div class="pass-icon">🕵️</div>
+      <p class="pass-label">Pass the device to</p>
+      <h1 id="pass-title" class="pass-name"></h1>
+      <p id="pass-subtitle" class="pass-role"></p>
+      <button id="btn-ready" class="btn btn-ready">I'm Ready — Tap to Continue</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen hidden">
+    <div class="top-bar">
+      <span id="turn-info" class="turn-info">Turn 1/24</span>
+      <span id="player-label" class="player-info"></span>
+      <button id="btn-rules-game" class="btn-icon" title="Rules">❓</button>
+      <button id="btn-travel-log" class="btn-icon" title="Travel Log">📋</button>
+    </div>
+    <div id="board-container" class="board-container"></div>
+    <div class="bottom-panel">
+      <div id="pawn-indicator" class="active-pawn-info hidden"></div>
+      <div id="ticket-bar" class="ticket-bar"></div>
+      <div id="mrx-toggles" class="mrx-controls hidden">
+        <button id="btn-double-move" class="btn btn-small btn-toggle">🎫 Double Move <span id="double-count"></span></button>
+        <button id="btn-black-ticket" class="btn btn-small btn-toggle">🎫 Black Ticket <span id="black-count"></span></button>
+      </div>
+      <div id="ticket-picker" class="ticket-picker hidden"></div>
+      <div id="move-confirm" class="move-confirm hidden">
+        <span class="move-confirm-label"></span>
+        <div class="confirm-btns">
+          <button id="btn-confirm-move" class="btn btn-primary btn-small">Confirm</button>
+          <button id="btn-cancel-move" class="btn btn-ghost btn-small">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <!-- Travel Log Panel -->
+    <div id="travel-log-panel" class="travel-log-panel hidden">
+      <div class="log-header">
+        <h3>Mr. X Travel Log</h3>
+        <button id="btn-close-log" class="btn-icon">✕</button>
+      </div>
+      <div id="travel-log-list" class="log-entries"></div>
+    </div>
+  </div>
+
+  <!-- GAME OVER SCREEN -->
+  <div id="screen-gameover" class="screen hidden">
+    <div class="screen-content gameover-content">
+      <div class="gameover-icon"></div>
+      <h1 id="winner-title"></h1>
+      <p id="winner-reason"></p>
+      <button id="btn-new-game-over" class="btn btn-primary">Play Again</button>
+    </div>
+  </div>
+
+  <!-- RULES MODAL -->
+  <div id="rules-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>How to Play</h2>
+        <button id="btn-close-rules" class="btn-icon">✕</button>
+      </div>
+      <div class="rules-body">
+        <section>
+          <h3>🎯 Objective</h3>
+          <p><strong>Mr. X</strong> must evade capture for 24 turns. <strong>Detectives</strong> must catch Mr. X by landing on the same station.</p>
+        </section>
+        <section>
+          <h3>🗺️ The Board</h3>
+          <p>199 stations connected by three transport types:</p>
+          <div class="transport-legend">
+            <span class="ticket-pill taxi">Taxi</span> — Short routes between adjacent stations<br>
+            <span class="ticket-pill bus">Bus</span> — Medium routes across neighborhoods<br>
+            <span class="ticket-pill underground">Underground</span> — Long routes between 14 key stations<br>
+            <span class="ticket-pill black">Black Ticket</span> — Mr. X only: any transport + boat
+          </div>
+        </section>
+        <section>
+          <h3>🎮 How Turns Work</h3>
+          <p>Mr. X moves first (secretly), then each detective. Tap a highlighted station to move there, choose your ticket type.</p>
+          <p><strong>Pass and Play:</strong> Hand the device between turns. Mr. X's position stays hidden!</p>
+        </section>
+        <section>
+          <h3>🕵️ Mr. X's Secrets</h3>
+          <p><strong>Travel Log:</strong> Detectives see which ticket Mr. X used each turn, but not the destination.</p>
+          <p><strong>Reveal Turns (3, 8, 13, 18, 24):</strong> Mr. X must show their position!</p>
+          <p><strong>Double Move:</strong> Move twice in one turn (2 available).</p>
+          <p><strong>Black Tickets:</strong> Hide which transport you used (5 available).</p>
+        </section>
+        <section>
+          <h3>🏆 Winning</h3>
+          <p><strong>Detectives win</strong> if any detective lands on Mr. X's station.</p>
+          <p><strong>Mr. X wins</strong> if all detectives are stranded or 24 turns pass.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVEAL OVERLAY -->
+  <div id="reveal-overlay" class="reveal-overlay hidden"></div>
+
+  <script src="js/graph-data.js"></script>
+  <script src="js/game-engine.js"></script>
+  <script src="js/board-renderer.js"></script>
+  <script src="js/ui-controller.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
